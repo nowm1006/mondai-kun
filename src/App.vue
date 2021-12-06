@@ -1,31 +1,24 @@
 <template>
 
   <template v-if="phase==='TITLE'">
-    <h1 class="title">問題くん</h1>
-    <!--
-    <img class="button" src=".\assets\drive_folder_upload_black_24dp.svg" @click="loadFile">
-    -->
-    <label for="file-selector"><img class="button" src=".\assets\drive_folder_upload_black_24dp.svg" ></label>
+    <h1 class="title main-word">問題くん</h1>
+    <label class="sub" for="file-selector"><img class="button" src=".\assets\drive_folder_upload_black_24dp.svg" ></label>
     <input id="file-selector" type="file" accept="*.yaml" @change="fileSelect">
   </template>
 
   <template v-else-if="phase==='QUESTION' || phase==='ANSWER'">
-    <h2>問題</h2>
-    <h1>{{word}}</h1>
+    <h1 class="word main-word">{{word}}</h1>
 
-    <h2>答え</h2>
-    <h1 v-if="phase==='ANSWER'">{{answer}}</h1>
-    <h1 v-else>???</h1>
+    <h1 class="title sub" v-if="phase==='ANSWER'">{{answer}}</h1>
 
-  <img class="button" src="./assets\skip_next_black_24dp.svg" v-if="phase==='QUESTION'" @click="showAnswer">
-  <div class="thumbs">
-  <img class="button" src=".\assets\thumb_up_black_24dp.svg" v-if="phase==='ANSWER'" @click="moveNext">
-  <img class="button" src=".\assets\thumb_down_black_24dp.svg" v-if="phase==='ANSWER'" @click="moveNext">
-  </div>
+    <div class="thumbs bottom">
+      <img class="button" src=".\assets\thumb_up_black_24dp.svg" v-if="phase==='ANSWER'" @click="moveNext">
+      <img class="button" src=".\assets\thumb_down_black_24dp.svg" v-if="phase==='ANSWER'" @click="noGood">
+    </div>
   </template>
 
   <template v-else>
-    <h1>おしまい</h1>
+    <h1 class="title">おしまい</h1>
   </template>
 
 </template>
@@ -40,19 +33,15 @@ export default {
     const word = ref('')
     const answer = ref('')
     const phase = ref('TITLE')
-//    const loadFile = async () => {
-      //let FileSystemHandles
-      //[FileSystemHandles] = await window.showOpenFilePicker();
-      //let file = await FileSystemHandles.getFile()
-      //let text = await file.text()
-      //wordList = yaml.load(text)
-      //moveNext()
-    //}
     const fileSelect = async () => {
       const input = document.getElementById('file-selector')
       const file = input.files[0]
       const text = await file.text()
       wordList = yaml.load(text)
+      moveNext()
+    }
+    const noGood = () => {
+      wordList = [word.value, ...wordList]
       moveNext()
     }
     const moveNext = async () => {
@@ -81,7 +70,7 @@ export default {
     const showAnswer = () => {
       phase.value = 'ANSWER'
     }
-    return {word,phase,fileSelect,moveNext,showAnswer,answer}
+    return {word,phase,fileSelect,noGood,moveNext,showAnswer,answer}
   }
 }
 
@@ -98,12 +87,29 @@ function sleep(sec) {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
-  display: flex;
-  flex-direction: column;
+  padding-top: 60px;
+  padding-bottom: 60px;
+  height: calc(100vh - 140px);
+  display: grid;
+  grid-template:
+    "main-word" 3fr
+    "sub"  1fr
+    "bottom" 200px /
+    auto;
+  align-items: center;
+}
+.main-word {
+  grid-area: main-word;
+}
+.sub {
+  grid-area: sub;
+}
+.bottom {
+  grid-area: bottom;
 }
 .button {
   width: 200px;
+  height: 200px;
 }
 #file-selector {
   display: none;
@@ -111,10 +117,17 @@ function sleep(sec) {
 .title {
   font-size: 4rem;
 }
+.label {
+  font-size: 2rem;
+}
+.word {
+  font-size: 6rem;
+}
 .thumbs {
   display: flex;
+  justify-content: center;
 }
 div.thumbs img {
-  flex: 1;
+  flex: 0;
 }
 </style>
