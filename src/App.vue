@@ -1,13 +1,26 @@
 <template>
-  <button @click="loadFile">問題ファイルをロード</button>
 
-  <p>問題</p>
-  <h1>{{word}}</h1>
-  <p>答え</p>
-  <h1 v-if="isShown">{{answer}}</h1>
+  <template v-if="phase==='TITLE'">
+    <h1>問題くん</h1>
+    <img class="button" src=".\assets\drive_folder_upload_black_24dp.svg" @click="loadFile">
+  </template>
 
-  <button v-if="!isShown" @click="showAnswer">答えを確認</button>
-  <button v-if="isShown" @click="moveNext">次へ</button>
+  <template v-else-if="phase==='QUESTION' || phase==='ANSWER'">
+    <p>問題</p>
+    <h1>{{word}}</h1>
+
+    <p>答え</p>
+    <h1 v-if="phase==='ANSWER'">{{answer}}</h1>
+    <h1 v-else>???</h1>
+
+  <img class="button" src="./assets\skip_next_black_24dp.svg" v-if="phase==='QUESTION'" @click="showAnswer">
+  <img class="button" src=".\assets\thumb_up_black_24dp.svg" v-if="phase==='ANSWER'" @click="moveNext">
+  <img class="button" src=".\assets\thumb_down_black_24dp.svg" v-if="phase==='ANSWER'" @click="moveNext">
+  </template>
+
+  <template v-else>
+    <h1>おしまい</h1>
+  </template>
 
 </template>
 
@@ -20,27 +33,36 @@ export default {
     let wordList=[]
     const word = ref('')
     const answer = ref('')
-    const isShown = ref(false)
+    const phase = ref('TITLE')
     const loadFile = async () => {
       let FileSystemHandles
       [FileSystemHandles] = await window.showOpenFilePicker();
       let file = await FileSystemHandles.getFile()
       let text = await file.text()
       wordList = yaml.load(text)
-      word.value = wordList.pop()
+      moveNext()
     }
     const moveNext = async () => {
       word.value = wordList.pop()
-      isShown.value = false     
+      if (word.value) {
+        phase.value = 'QUESTION'
+      } else {
+        phase.value = 'END'
+      }
+
+      let u = new SpeechSynthesisUtterance();
+      u.lang = 'en-US';
+      u.text = word.value? word.value : 'Good Job!';
+      speechSynthesis.speak(u);
 
       const response = await fetch(`https://script.google.com/macros/s/AKfycbzZtvOvf14TaMdRIYzocRcf3mktzGgXvlFvyczo/exec?text=${word.value}&source=en&target=ja`)
       const data = await response.json()
       answer.value = data.text  
     }
     const showAnswer = () => {
-      isShown.value = true
+      phase.value = 'ANSWER'
     }
-    return {word,isShown,loadFile,moveNext,showAnswer,answer}
+    return {word,phase,loadFile,moveNext,showAnswer,answer}
   }
 }
 </script>
@@ -53,5 +75,8 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+.button {
+  width: 200px;
 }
 </style>
