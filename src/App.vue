@@ -2,8 +2,22 @@
 
   <template v-if="phase==='TITLE'">
     <h1 class="title main-word">問題くん</h1>
-    <label class="sub" for="file-selector"><img class="button" src=".\assets\drive_folder_upload_black_24dp.svg" ></label>
-    <input id="file-selector" type="file" accept="*.yaml" @change="fileSelect">
+    <div class="sub">
+      <div class="flex-container">
+        <button class="btn" @click="courseSelect">スタート</button>
+        <label for="course-select" class="label">コースを選択</label>
+        <select v-if="isLoadedCourse" id="course-select" v-model="selectedCourse" class="input">
+          <option v-for="course in courses" :key="course"> {{course}}</option>
+        </select>
+        <p v-else> Loading... </p>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="flex-container">
+        <label for="timer-input" class="label">待ち時間(秒) </label>
+        <input id="timer-input"  type="text" v-model="timer" class="input">
+      </div>
+    </div>
   </template>
 
   <template v-else-if="phase==='QUESTION' || phase==='ANSWER'">
@@ -19,13 +33,15 @@
 
   <template v-else>
     <h1 class="title">おしまい</h1>
+    <div>
+    <button class="sub btn" @click="phase='TITLE'">もう一度</button>
+    </div>
   </template>
 
 </template>
 
 <script>
-import {ref} from 'vue'
-import yaml from 'js-yaml'
+import {ref, onMounted} from 'vue'
 export default {
 
   setup() {
@@ -33,44 +49,53 @@ export default {
     const word = ref('')
     const answer = ref('')
     const phase = ref('TITLE')
-    const fileSelect = async () => {
-      const input = document.getElementById('file-selector')
-      const file = input.files[0]
-      const text = await file.text()
-      wordList = yaml.load(text)
+    const timer = ref(3)
+    const courses = ref([])
+    const selectedCourse = ref('')
+    const isLoadedCourse = ref(false)
+
+    onMounted(async ()=>{
+      const response = await fetch(`https://script.google.com/macros/s/AKfycbyvHc6mRDa0coil3Qj8b4m9Kql44UJp1VkocBf-6ZrkCH0_ex8FHiWSzq7d-r2mbFY5/exec`)
+      const data = await response.json()
+      courses.value = data
+      isLoadedCourse.value = true
+    })
+    const courseSelect = async () => {
+      const response = await fetch(`https://script.google.com/macros/s/AKfycbyvHc6mRDa0coil3Qj8b4m9Kql44UJp1VkocBf-6ZrkCH0_ex8FHiWSzq7d-r2mbFY5/exec?key=${selectedCourse.value}`)
+      const data = await response.json()
+      wordList = data
       moveNext()
     }
+
     const noGood = () => {
       wordList = [word.value, ...wordList]
       moveNext()
     }
+
     const moveNext = async () => {
       word.value = wordList.pop()
-
       let u = new SpeechSynthesisUtterance();
       u.lang = 'en-US';
       u.text = word.value? word.value : 'Good Job!';
       speechSynthesis.speak(u);
-
       if (word.value) {
         phase.value = 'QUESTION'
       } else {
         phase.value = 'END'
         return
       }
-
       const response = await fetch(`https://script.google.com/macros/s/AKfycbzZtvOvf14TaMdRIYzocRcf3mktzGgXvlFvyczo/exec?text=${word.value}&source=en&target=ja`)
       const data = await response.json()
       answer.value = data.text  
-
-      await sleep(1)
-
+      await sleep(timer.value)
       showAnswer()
     }
+
     const showAnswer = () => {
       phase.value = 'ANSWER'
     }
-    return {word,phase,fileSelect,noGood,moveNext,showAnswer,answer}
+
+    return {word,phase,courseSelect,noGood,moveNext,showAnswer,answer,timer,isLoadedCourse,courses,selectedCourse}
   }
 }
 
@@ -103,9 +128,11 @@ function sleep(sec) {
 }
 .sub {
   grid-area: sub;
+  margin: 0 auto;
 }
 .bottom {
   grid-area: bottom;
+  margin: 0 auto;
 }
 .button {
   width: 200px;
@@ -118,6 +145,7 @@ function sleep(sec) {
   font-size: 4rem;
 }
 .label {
+  margin-top: 1rem;
   font-size: 2rem;
 }
 .word {
@@ -129,5 +157,39 @@ function sleep(sec) {
 }
 div.thumbs img {
   flex: 0;
+}
+.flex-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  width: 400px;
+  align-items: center;
+}
+.btn {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.5;
+  position: relative;
+  display: inline-block;
+  padding: 1rem 4rem;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
+  text-align: center;
+  vertical-align: middle;
+  text-decoration: none;
+  letter-spacing: 0.1em;
+  color: white;
+  background-color: blue;
+  border-radius: 0.5rem;
+}
+.input {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 </style>
