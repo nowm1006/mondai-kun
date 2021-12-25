@@ -68,12 +68,16 @@ export default {
     }
 
     const noGood = () => {
-      wordList = [word.value, ...wordList]
+      wordList = [{word:word.value,answer:answer.value}, ...wordList]
       moveNext()
     }
 
     const moveNext = async () => {
-      word.value = wordList.pop()
+      const mondai= wordList.pop()
+      const w = mondai?.word
+      const a = mondai?.answer
+      word.value = w
+      answer.value = a
       let u = new SpeechSynthesisUtterance();
       u.lang = 'en-US';
       u.text = word.value? word.value : 'Good Job!';
@@ -84,9 +88,9 @@ export default {
         phase.value = 'END'
         return
       }
-      const response = await fetch(`https://script.google.com/macros/s/AKfycbzZtvOvf14TaMdRIYzocRcf3mktzGgXvlFvyczo/exec?text=${word.value}&source=en&target=ja`)
-      const data = await response.json()
-      answer.value = data.text  
+      // const response = await fetch(`https://script.google.com/macros/s/AKfycbzZtvOvf14TaMdRIYzocRcf3mktzGgXvlFvyczo/exec?text=${word.value}&source=en&target=ja`)
+      // const data = await response.json()
+      // answer.value = data.text  
       await sleep(timer.value)
       showAnswer()
     }
